@@ -217,7 +217,7 @@ drvError_t drv8305CW(drv8305Dev_t *dev){ //this needs to be called at the desire
     switch (dev->settings.gateCtrl.PWM_MODE) {
 
         case DRV_PWM_INPUT_1:
-            state = drv8305StateMachine(false);
+            state = drv8305StateMachine(false); //TODO: NEED WAY TO CONTROL DWELL TIME
 
             setPin8(dev->pinCtrl.singlePwm.inla, (state & 1));
             state >>= 1;
@@ -252,7 +252,7 @@ drvError_t drv8305CCW(drv8305Dev_t *dev){ //this needs to be called at the desir
     switch (dev->settings.gateCtrl.PWM_MODE) {
 
         case DRV_PWM_INPUT_1:
-            state = drv8305StateMachine(true);
+            state = drv8305StateMachine(true); //TODO: NEED WAY TO CONTROL DWELL TIME
 
             setPin8(dev->pinCtrl.singlePwm.dwell, (state & 1));
             state >>= 1;
@@ -324,9 +324,9 @@ drvError_t drv8305Align(drv8305Dev_t *dev){
 
         case DRV_PWM_INPUT_1:
             // 1110
-            setPin8(dev->pinCtrl.singlePwm.inla, false);
-            setPin8(dev->pinCtrl.singlePwm.inhb, false);
-            setPin8(dev->pinCtrl.singlePwm.inlb, false);
+            setPin8(dev->pinCtrl.singlePwm.inla, true);
+            setPin8(dev->pinCtrl.singlePwm.inhb, true);
+            setPin8(dev->pinCtrl.singlePwm.inlb, true);
             setPin8(dev->pinCtrl.singlePwm.dwell, false);
         break;
 

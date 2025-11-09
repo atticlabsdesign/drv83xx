@@ -20,7 +20,7 @@ const drv8305Settings_t DRV8305_DEFAULT_SETTINGS = {
 |  Private Functions |
 ---------------------
 ********************/
-uint8_t drv8305StateMachine(bool);
+uint8_t inline drv8305StateMachine(bool, uint8_t *);
 
 
 /********************
@@ -210,49 +210,14 @@ drvError_t drv8305SetSettings(drv8305Dev_t *dev){ //TODO: try to figure out a wa
 
 }
 
-drvError_t drv8305CW(drv8305Dev_t *dev){ //this needs to be called at the desired motor speed in Single PWM mode and should not be called if the motor is in the stop or align state
+drvError_t drv8305Spin(drv8305Dev_t *dev, bool dir){
     drvError_t error = DRV_OK;
     uint8_t state = 0;
 
     switch (dev->settings.gateCtrl.PWM_MODE) {
 
         case DRV_PWM_INPUT_1:
-            state = drv8305StateMachine(false); //TODO: NEED WAY TO CONTROL DWELL TIME
-
-            setPin8(dev->pinCtrl.singlePwm.inla, (state & 1));
-            state >>= 1;
-            setPin8(dev->pinCtrl.singlePwm.inlb, (state & 1));
-            state >>= 1;
-            setPin8(dev->pinCtrl.singlePwm.inhb, (state & 1));
-            state >>= 1;
-            setPin8(dev->pinCtrl.singlePwm.inla, (state & 1));
-
-        break;
-
-        case  DRV_PWM_INPUT_3:
-            
-        break;
-
-        case  DRV_PWM_INPUT_6:
-            
-        break;
-        
-        default:
-        error = DRV_UNKNOWN_SETTING;
-    
-    }
-
-    return error;
-}
-
-drvError_t drv8305CCW(drv8305Dev_t *dev){ //this needs to be called at the desired motor speed in Single PWM mode and should not be called if the motor is in the stop or align state
-    drvError_t error = DRV_OK;
-    uint8_t state = 0;
-
-    switch (dev->settings.gateCtrl.PWM_MODE) {
-
-        case DRV_PWM_INPUT_1:
-            state = drv8305StateMachine(true); //TODO: NEED WAY TO CONTROL DWELL TIME
+            state = drv8305StateMachine(dir,&dev->pinCtrl.singlePwm.state); //TODO: NEED WAY TO CONTROL DWELL TIME
 
             setPin8(dev->pinCtrl.singlePwm.dwell, (state & 1));
             state >>= 1;
@@ -281,7 +246,7 @@ drvError_t drv8305CCW(drv8305Dev_t *dev){ //this needs to be called at the desir
 }
 
 
-drvError_t drv8305Brake(drv8305Dev_t *dev){
+drvError_t drv8305Stop(drv8305Dev_t *dev){
     drvError_t error = DRV_OK;
     switch (dev->settings.gateCtrl.PWM_MODE) {
 
@@ -346,21 +311,16 @@ drvError_t drv8305Align(drv8305Dev_t *dev){
     return error;
 }
 
-uint8_t drv8305StateMachine(bool CCW){
-    static uint8_t currentState = 0;
-
+uint8_t inline drv8305StateMachine(bool CCW, uint8_t *currentState){ //current state needs to be updated outside of this function before calling
     uint8_t STATE_LUT[12] = {0x6, 0x5, 0x4, 0xD, 0xC, 0x9, 0x8, 0xB, 0xA, 0x3, 0x2, 0x7};
     
-    if (currentState == 0 && !CCW) {
-        currentState = 11;
-    } else if (currentState == 11 && CCW) {
-        currentState = 0;
-    } else if (CCW){
-        currentState ++; 
-    } else {
-        currentState --;
-    }
-    return STATE_LUT[currentState];
+    if (*currentState == 255 && !CCW) {
+        *currentState = 11;
+    } else if (*currentState == 12 && CCW) {
+        *currentState = 0;
+    } 
+
+    return STATE_LUT[*currentState];
 }
 
 #ifdef DRV8305_DEBUG_MENUS

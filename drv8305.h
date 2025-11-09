@@ -10,7 +10,6 @@
 
 // Masks for SPI registers
 
-
 /********************
 ---------------------
 |Warnings & Watchdog|
@@ -630,6 +629,7 @@ typedef struct {
             pinId8_t inhb;
             pinId8_t inlb;
             pinId8_t dwell; //
+            uint8_t  state;
         } singlePwm;
 
         struct {
@@ -691,11 +691,9 @@ drvError_t drv8305GetSettings(drv8305Dev_t *);
 drvError_t drv8305GetFaults(drv8305Dev_t *);
 
 
-drvError_t drv8305CW(drv8305Dev_t*);
+drvError_t drv8305Spin(drv8305Dev_t*, bool);
 
-drvError_t drv8305CCW(drv8305Dev_t*);
-
-drvError_t drv8305Brake(drv8305Dev_t*);
+drvError_t drv8305Stop(drv8305Dev_t*);
 
 drvError_t drv8305Align(drv8305Dev_t*);
 #endif

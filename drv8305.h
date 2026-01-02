@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "drv83xx_types.h"
 #include "../pwm/pwm.h"
 #include "../pinctrl/pinctrl.h"
@@ -59,23 +60,24 @@ typedef enum {
 
 /*________________________________________________*/
 
-#if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ //flip the struct order so that the bits member remains readable on the host device
-
+#if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ //flip the struct order so that the bits member remains readable on the host device 
+// this works on ATMEGA328p, need to check alt implementation on a big endien device
 typedef struct {
 
     union {
         struct { // 0x1
-            bool OTW            ;
-            bool TEMP_FLAG3     ;
-            bool TEMP_FLAG2     ;
-            bool TEMP_FLAG1     ;
-            bool VCHP_UVFL      ;
-            bool VDS_STATUS     ;
-            bool PVDD_OVFL      ;
-            bool PVDD_UVFL      ;
-            bool TEMP_FLAG4     ;
+            bool OTW        : 1 ;
+            bool TEMP_FLAG3 : 1 ;
+            bool TEMP_FLAG2 : 1 ;
+            bool TEMP_FLAG1 : 1 ;
+            bool VCHP_UVFL  : 1 ;
+            bool VDS_STATUS : 1 ;
+            bool PVDD_OVFL  : 1 ;
+            bool PVDD_UVFL  : 1 ;
+            bool TEMP_FLAG4 : 1 ;
             int             : 1 ; //RSVD
-            bool FAULT          ;
+            bool FAULT      : 1 ;
+            int             : 5 ; // N/A
         };
 
         uint16_t bits;
@@ -84,17 +86,17 @@ typedef struct {
 
     union {
         struct { // 0x2
-            bool SNS_A_OCP      ;
-            bool SNS_B_OCP      ;
-            bool SNS_C_OCP      ;
+            bool SNS_A_OCP  : 1 ;
+            bool SNS_B_OCP  : 1 ;
+            bool SNS_C_OCP  : 1 ;
             int             : 2 ; //RSVD
-            bool VDS_LC         ;
-            bool VDS_HC         ;
-            bool VDS_LB         ;
-            bool VDS_HB         ;
-            bool VDS_LA         ;
-            bool VDS_HA         ;
-            
+            bool VDS_LC     : 1 ;
+            bool VDS_HC     : 1 ;
+            bool VDS_LB     : 1 ;
+            bool VDS_HB     : 1 ;
+            bool VDS_LA     : 1 ;
+            bool VDS_HA     : 1 ;
+            int             : 5 ; // N/A
         };
 
         uint16_t bits;
@@ -103,17 +105,18 @@ typedef struct {
 
     union {
         struct { // 0x3
-            bool VCPH_OVLO_ABS  ;
-            bool VCPH_OVLO      ;
-            bool VCPH_OVLO2     ;
-            int             : 1 ; //RSVD
-            bool VCP_LSD_UVLO2  ;
-            bool AVDD_UVLO      ;
-            bool VREG_UV        ;
-            int             : 1 ; //RSVD
-            bool OTSD           ;
-            bool WD_FAULT       ;
-            bool PVDD_UVLO2     ;
+            bool VCPH_OVLO_ABS  : 1 ;
+            bool VCPH_OVLO      : 1 ;
+            bool VCPH_OVLO2     : 1 ;
+            int                 : 1 ; //RSVD
+            bool VCP_LSD_UVLO2  : 1 ;
+            bool AVDD_UVLO      : 1 ;
+            bool VREG_UV        : 1 ;
+            int                 : 1 ; //RSVD
+            bool OTSD           : 1 ;
+            bool WD_FAULT       : 1 ;
+            bool PVDD_UVLO2     : 1 ;
+            int                 : 5 ; // N/A
         };
 
         uint16_t bits;
@@ -123,12 +126,13 @@ typedef struct {
     union {
         struct { // 0x3
             int             : 5 ; //RSVD
-            bool VGS_LC         ;
-            bool VGS_HC         ;
-            bool VGS_LB         ;
-            bool VGS_HB         ;
-            bool VGS_LA         ;
-            bool VGS_HA         ;
+            bool VGS_LC     : 1 ;
+            bool VGS_HC     : 1 ;
+            bool VGS_LB     : 1 ;
+            bool VGS_HB     : 1 ;
+            bool VGS_LA     : 1 ;
+            bool VGS_HA     : 1 ;
+            int             : 5 ; // N/A
         };
 
         uint16_t bits;
@@ -146,55 +150,57 @@ typedef struct {
 
     union {
         struct { // 0x1
-            bool FAULT          ;
+            int             : 5 ; // N/A
+            bool FAULT      : 1 ;
             int             : 1 ; //RSVD
-            bool TEMP_FLAG4     ;
-            bool PVDD_UVFL      ;
-            bool PVDD_OVFL      ;
-            bool VDS_STATUS     ;
-            bool VCHP_UVFL      ;
-            bool TEMP_FLAG1     ;
-            bool TEMP_FLAG2     ;
-            bool TEMP_FLAG3     ;
-            bool OTW            ;
+            bool TEMP_FLAG4 : 1 ;
+            bool PVDD_UVFL  : 1 ;
+            bool PVDD_OVFL  : 1 ;
+            bool VDS_STATUS : 1 ;
+            bool VCHP_UVFL  : 1 ;
+            bool TEMP_FLAG1 : 1 ;
+            bool TEMP_FLAG2 : 1 ;
+            bool TEMP_FLAG3 : 1 ;
+            bool OTW        : 1 ;
         };
 
         uint16_t bits;
 
     } WWR; //warnings and watchdog reset
-    
+
     union {
         struct { // 0x2
-            bool VDS_HA         ;
-            bool VDS_LA         ;
-            bool VDS_HB         ;
-            bool VDS_LB         ;
-            bool VDS_HC         ;
-            bool VDS_LC         ;
+            int             : 5 ; // N/A
+            bool VDS_HA     : 1 ;
+            bool VDS_LA     : 1 ;
+            bool VDS_HB     : 1 ;
+            bool VDS_LB     : 1 ;
+            bool VDS_HC     : 1 ;
+            bool VDS_LC     : 1 ;
             int             : 2 ; //RSVD
-            bool SNS_C_OCP      ;
-            bool SNS_B_OCP      ;
-            bool SNS_A_OCP      ;
-            
+            bool SNS_C_OCP  : 1 ;
+            bool SNS_B_OCP  : 1 ;
+            bool SNS_A_OCP  : 1 ;
         };
 
         uint16_t bits;
 
     } VDS; //Overvoltage/VDS    
-    
+
     union {
         struct { // 0x3
-            bool PVDD_UVLO2     ;
-            bool WD_FAULT       ;
-            bool OTSD           ;
-            int             : 1 ; //RSVD
-            bool VREG_UV        ;
-            bool AVDD_UVLO      ;
-            bool VCP_LSD_UVLO2  ;
-            int             : 1 ; //RSVD
-            bool VCPH_OVLO2     ;
-            bool VCPH_OVLO      ;
-            bool VCPH_OVLO_ABS  ;
+            int                 : 5 ; // N/A
+            bool PVDD_UVLO2     : 1 ;
+            bool WD_FAULT       : 1 ;
+            bool OTSD           : 1 ;
+            int                 : 1 ; //RSVD
+            bool VREG_UV        : 1 ;
+            bool AVDD_UVLO      : 1 ;
+            bool VCP_LSD_UVLO2  : 1 ;
+            int                 : 1 ; //RSVD
+            bool VCPH_OVLO2     : 1 ;
+            bool VCPH_OVLO      : 1 ;
+            bool VCPH_OVLO_ABS  : 1 ;
         };
 
         uint16_t bits;
@@ -203,12 +209,13 @@ typedef struct {
 
     union {
         struct { // 0x3
-            bool VGS_HA         ;
-            bool VGS_LA         ;
-            bool VGS_HB         ;
-            bool VGS_LB         ;
-            bool VGS_HC         ;
-            bool VGS_LC         ;
+            int             : 5 ; // N/A
+            bool VGS_HA     : 1 ;
+            bool VGS_LA     : 1 ;
+            bool VGS_HB     : 1 ;
+            bool VGS_LB     : 1 ;
+            bool VGS_HC     : 1 ;
+            bool VGS_LC     : 1 ;
             int             : 5 ; //RSVD
         };
 
@@ -220,6 +227,8 @@ typedef struct {
 
 
 #endif
+
+    // ALL OF THESE SETTINGS STRUCTS NEED TO CHANGE, I SWAPPED THE BIT ORDER INSTEAD OF THE BYTE ORDER
 
 /*________________________________________________*/
 
@@ -387,15 +396,15 @@ typedef enum {
 typedef union{
     struct {  //0x9
         drv8305VCPH_t       SET_VCPH_UV     : 1;
-        bool                CLR_FLTS           ;
-        bool                SLEEP              ;
-        bool                WD_EN              ;
-        bool                DIS_SNS_OCP        ;
+        bool                CLR_FLTS        : 1;
+        bool                SLEEP           : 1;
+        bool                WD_EN           : 1;
+        bool                DIS_SNS_OCP     : 1;
         drv8305WdDelay_t    WD_DLY          : 2;        
-        bool                EN_SNS_CLAMP       ;
-        bool                DIS_GDRV_FAULT     ;
-        bool                DIS_PVDD_UVLO2     ;
-        bool                FLIP_OTSD          ;        
+        bool                EN_SNS_CLAMP    : 1;
+        bool                DIS_GDRV_FAULT  : 1;
+        bool                DIS_PVDD_UVLO2  : 1;
+        bool                FLIP_OTSD       : 1;        
         int                                 : 5; //RSVD
 
     };
@@ -408,15 +417,15 @@ typedef union{
 typedef union{
     struct {  //0x9
         int                                 : 5; //RSVD
-        bool                FLIP_OTSD          ;
-        bool                DIS_PVDD_UVLO2     ;
-        bool                DIS_GDRV_FAULT     ;
-        bool                EN_SNS_CLAMP       ;
+        bool                FLIP_OTSD       : 1;
+        bool                DIS_PVDD_UVLO2  : 1;
+        bool                DIS_GDRV_FAULT  : 1;
+        bool                EN_SNS_CLAMP    : 1;
         drv8305WdDelay_t    WD_DLY          : 2;
-        bool                DIS_SNS_OCP        ;  
-        bool                WD_EN              ;
-        bool                SLEEP              ;
-        bool                CLR_FLTS           ;
+        bool                DIS_SNS_OCP     : 1;  
+        bool                WD_EN           : 1;
+        bool                SLEEP           : 1;
+        bool                CLR_FLTS        : 1;
         drv8305VCPH_t       SET_VCPH_UV     : 1;
     };
 
@@ -448,9 +457,9 @@ typedef union {
         drv8305CsGain_t GAIN_CS2    : 2;
         drv8305CsGain_t GAIN_CS3    : 2;
         drv8305CsBlank_t CS_BLANK   : 2;
-        bool DC_CAL_CH1;
-        bool DC_CAL_CH2;
-        bool DC_CAL_CH3;
+        bool DC_CAL_CH1             : 1;
+        bool DC_CAL_CH2             : 1;
+        bool DC_CAL_CH3             : 1;
         int                         : 5; //RSVD
     };
 
@@ -462,9 +471,9 @@ typedef union {
 typedef union {
     struct {  //0xA
         int                         : 5; //RSVD
-        bool DC_CAL_CH3;
-        bool DC_CAL_CH2;
-        bool DC_CAL_CH1;
+        bool DC_CAL_CH3             : 1;
+        bool DC_CAL_CH2             : 1;
+        bool DC_CAL_CH1             : 1;
         drv8305CsBlank_t CS_BLANK   : 2;
         drv8305CsGain_t GAIN_CS3    : 2;
         drv8305CsGain_t GAIN_CS2    : 2;
@@ -501,7 +510,7 @@ typedef enum {
 typedef union {
     struct  {  //0xB
         drv8305VregUv_t     VREG_UV_LEVEL   : 2;
-        bool                DIS_VREG_PWRGD     ; 
+        bool                DIS_VREG_PWRGD  : 1; 
         drv8305SleepDly_t   SLEEP_DLY       : 2;
         int                                 : 3; //RSVD
         drv8305VrefScale_t  VREF_SCALE      : 2;
@@ -519,7 +528,7 @@ typedef union {
         drv8305VrefScale_t  VREF_SCALE      : 2;
         int                                 : 3; //RSVD
         drv8305SleepDly_t   SLEEP_DLY       : 2;
-        bool                DIS_VREG_PWRGD     ; 
+        bool                DIS_VREG_PWRGD  : 1; 
         drv8305VregUv_t     VREG_UV_LEVEL   : 2;
     };
 
@@ -602,7 +611,7 @@ typedef union {
 /*________________________________________________*/
 
 typedef struct {
-    const struct SPI_INTERFACE *spiInterface;
+    const struct SPI_INTERFACE *spiInterface; // this should change eventually to something more universal than the mcc generated struct
     const pinId8_t              nCS;
 }drv8305Comms_t;
 
@@ -680,9 +689,71 @@ typedef struct {
 ********************/
 
 
-drvError_t drv8305RegRead(drv8305Comms_t *, drv8305Addr_t, uint16_t*);
+/**
+ * @brief Reads a single SPI register of a DRV8305 Motor Controller
+ * 
+ * @param addr Register address to be read
+ * @param data Data read from register
+ * @return drvError_t 
+ */
+inline drvError_t drv8305RegRead(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *data){
+    bool timeout = false;
+    
+    setPin8(spi->nCS, LOW);
 
-drvError_t drv8305RegWrite(drv8305Comms_t *, drv8305Addr_t, uint16_t*); // should this really be public?
+    uint16_t buffer = (1<<15) | (addr << 11);
+
+    #if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        buffer = (buffer << 8 ) | (buffer >> 8); 
+    #endif
+
+    spi->spiInterface->BufferExchange(&buffer, sizeof(buffer));
+
+    #if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        buffer = (buffer << 8 ) | (buffer >> 8); 
+    #endif
+    *data = (buffer & 0x7ff);
+    
+
+    setPin8(spi->nCS, HIGH);
+    
+    if (timeout) {
+        return DRV_NO_RESP;
+    } else {
+        return DRV_OK;
+    }
+    
+}
+
+/**
+ * @brief Writes to a single SPI register of a DRV8305 Motor Controller
+ * 
+ * @param addr Register address to be written to
+ * @param data Data to be written to register, contains the overwritten value of the register after writing
+ * @return drvError_t 
+ */
+inline drvError_t drv8305RegWrite(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *data){
+    bool timeout = false;
+    setPin8(spi->nCS, LOW);
+    
+    uint16_t buffer = (0<<15) | (addr << 11) | (*data & 0x7ff);
+
+    #if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        buffer = (buffer << 8 ) | (buffer >> 8); 
+    #endif
+
+    spi->spiInterface->BufferExchange(&buffer, sizeof(buffer));
+    *data = (buffer & 0x7ff); //data now cointains the overwritten values, is this even useful?
+
+    setPin8(spi->nCS, HIGH);
+
+    if (timeout) {
+        return DRV_NO_RESP;
+    } else {
+        return DRV_OK;
+    }
+    
+}
 
 drvError_t drv8305SetSettings(drv8305Dev_t *);
 
@@ -691,7 +762,9 @@ drvError_t drv8305GetSettings(drv8305Dev_t *);
 drvError_t drv8305GetFaults(drv8305Dev_t *);
 
 
-drvError_t drv8305Spin(drv8305Dev_t*, bool);
+drvError_t drv8305CCW(drv8305Dev_t*);
+
+drvError_t drv8305CW(drv8305Dev_t*);
 
 drvError_t drv8305Stop(drv8305Dev_t*);
 

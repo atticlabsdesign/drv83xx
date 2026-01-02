@@ -30,74 +30,6 @@ uint8_t inline drv8305StateMachine(bool, uint8_t *);
 ********************/
 
 
-/**
- * @brief Reads a single SPI register of a DRV8305 Motor Controller
- * 
- * @param addr Register address to be read
- * @param data Data read from register
- * @return drvError_t 
- */
-drvError_t drv8305RegRead(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *data){
-    bool timeout = false;
-    
-    setPin8(spi->nCS, LOW);
-
-    uint16_t buffer = (1<<15) | (addr << 11);
-
-    #if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-        buffer = (buffer << 8 ) | (buffer >> 8); 
-    #endif
-
-    spi->spiInterface->BufferExchange(&buffer, sizeof(buffer));
-
-    #if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-        buffer = (buffer << 8 ) | (buffer >> 8); 
-    #endif
-    
-    *data = (buffer & 0x3ff);
-    
-
-    setPin8(spi->nCS, HIGH);
-    
-    if (timeout) {
-        return DRV_NO_RESP;
-    } else {
-        return DRV_OK;
-    }
-    
-}
-
-/**
- * @brief Writes to a single SPI register of a DRV8305 Motor Controller
- * 
- * @param addr Register address to be written to
- * @param data Data to be written to register, contains the overwritten value of the register after writing
- * @return drvError_t 
- */
-drvError_t drv8305RegWrite(drv8305Comms_t *spi, drv8305Addr_t addr, uint16_t *data){
-    bool timeout = false;
-    setPin8(spi->nCS, LOW);
-    
-    uint16_t buffer = (0<<15) | (addr << 11) | (*data & 0x3ff);
-
-    #if  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-        buffer = (buffer << 8 ) | (buffer >> 8); 
-    #endif
-
-    spi->spiInterface->BufferExchange(&buffer, sizeof(buffer));
-    *data = (buffer & 0x3ff); //data now cointains the overwritten values, is this even useful?
-
-    setPin8(spi->nCS, HIGH);
-
-    if (timeout) {
-        return DRV_NO_RESP;
-    } else {
-        return DRV_OK;
-    }
-    
-}
-
-
 drvError_t drv8305GetSettings(drv8305Dev_t *dev){
     drvError_t error = DRV_OK;
     
@@ -136,33 +68,33 @@ drvError_t drv8305GetSettings(drv8305Dev_t *dev){
     return error;
 }
 
-drvError_t drv8305GetFaults(drv8305Dev_t *dev){
+drvError_t drv8305GetFaults(drv8305Dev_t *dev){ //should check the nfault pin before calling this function to make sure there is a fault
     drvError_t error = DRV_OK;
+
+        error = drv8305RegRead(&dev->comms, DRV8305_WARNING_ADDR, &dev->faults.WWR.bits);
+        if (error) {
+            return error;
+        }
+
+        error = drv8305RegRead(&dev->comms, DRV8305_VDSFAULT_ADDR, &dev->faults.VDS.bits);
+        if (error) {
+            return error;
+        }
+
+        error = drv8305RegRead(&dev->comms, DRV8305_ICFAULT_ADDR, &dev->faults.IC.bits);
+        if (error) {
+            return error;
+        }
+
+        error = drv8305RegRead(&dev->comms, DRV8305_VGSFAULT_ADDR, &dev->faults.VGS.bits);
+        if (error) {
+            return error;
+        }
     
-    error = drv8305RegRead(&dev->comms, DRV8305_WARNING_ADDR, &dev->faults.WWR.bits);
-    if (error) {
-        return error;
-    }
-    
-    error = drv8305RegRead(&dev->comms, DRV8305_VDSFAULT_ADDR, &dev->faults.VDS.bits);
-    if (error) {
-        return error;
-    }
-
-    error = drv8305RegRead(&dev->comms, DRV8305_ICFAULT_ADDR, &dev->faults.IC.bits);
-    if (error) {
-        return error;
-    }
-
-    error = drv8305RegRead(&dev->comms, DRV8305_VGSFAULT_ADDR, &dev->faults.VGS.bits);
-    if (error) {
-        return error;
-    }
-
     return error;
 }
 
-drvError_t drv8305SetSettings(drv8305Dev_t *dev){ //TODO: try to figure out a way to avoid unneccessarily writing to registers
+drvError_t drv8305SetSettings(drv8305Dev_t *dev){ //TODO: try to figure out a way to avoid unneccessarily writing to registers... could hold onto a static copy of the device struct settings and check what is different with the new one
     drvError_t error = DRV_OK;          
 
     uint16_t buffer; //so we dont overwrite the values in the struct
@@ -210,14 +142,49 @@ drvError_t drv8305SetSettings(drv8305Dev_t *dev){ //TODO: try to figure out a wa
 
 }
 
-drvError_t drv8305Spin(drv8305Dev_t *dev, bool dir){
+drvError_t drv8305CCW(drv8305Dev_t *dev){
     drvError_t error = DRV_OK;
     uint8_t state = 0;
 
     switch (dev->settings.gateCtrl.PWM_MODE) {
 
         case DRV_PWM_INPUT_1:
-            state = drv8305StateMachine(dir,&dev->pinCtrl.singlePwm.state); //TODO: NEED WAY TO CONTROL DWELL TIME
+            state = drv8305StateMachine(true,&dev->pinCtrl.singlePwm.state); //TODO: NEED WAY TO CONTROL DWELL TIME
+
+            setPin8(dev->pinCtrl.singlePwm.dwell, (state & 1));
+            state >>= 1;
+            setPin8(dev->pinCtrl.singlePwm.inlb, (state & 1));
+            state >>= 1;
+            setPin8(dev->pinCtrl.singlePwm.inhb, (state & 1));
+            state >>= 1;
+            setPin8(dev->pinCtrl.singlePwm.inla, (state & 1));
+
+        break;
+
+        case  DRV_PWM_INPUT_3:
+            
+        break;
+
+        case  DRV_PWM_INPUT_6:
+            
+        break;
+        
+        default:
+        error = DRV_UNKNOWN_SETTING;
+    
+    }
+
+    return error;
+}
+
+drvError_t drv8305CW(drv8305Dev_t *dev){
+    drvError_t error = DRV_OK;
+    uint8_t state = 0;
+
+    switch (dev->settings.gateCtrl.PWM_MODE) {
+
+        case DRV_PWM_INPUT_1:
+            state = drv8305StateMachine(false,&dev->pinCtrl.singlePwm.state); //TODO: NEED WAY TO CONTROL DWELL TIME
 
             setPin8(dev->pinCtrl.singlePwm.dwell, (state & 1));
             state >>= 1;
@@ -311,7 +278,7 @@ drvError_t drv8305Align(drv8305Dev_t *dev){
     return error;
 }
 
-uint8_t inline drv8305StateMachine(bool CCW, uint8_t *currentState){ //current state needs to be updated outside of this function before calling
+inline uint8_t drv8305StateMachine(bool CCW, uint8_t *currentState){ //current state needs to be updated outside of this function before calling
     uint8_t STATE_LUT[12] = {0x6, 0x5, 0x4, 0xD, 0xC, 0x9, 0x8, 0xB, 0xA, 0x3, 0x2, 0x7};
     
     if (*currentState == 255 && !CCW) {
